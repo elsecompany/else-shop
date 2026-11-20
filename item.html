@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>else — Curated AI fashion</title>
+  <meta name="description" content="A one-of-a-kind pre-loved piece on else. Get the app to make it yours.">
+  <!-- Work in progress: keep this page out of Google until the site is live -->
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#e9eefb">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/else.css">
+</head>
+<body class="page-item">
+
+  <!-- Fixed header (always frosted on this page: there is no sky photo) -->
+  <header class="site-header is-solid" data-site-header>
+    <nav class="nav container" aria-label="Main">
+      <a class="nav__logo" href="index.html" aria-label="else home">
+        <img class="nav__logo-light" src="img/mark-white.png" alt="else" width="532" height="240">
+        <img class="nav__logo-dark" src="img/mark-dark.png" alt="" width="532" height="240">
+      </a>
+      <div class="nav__links">
+        <a class="hide-mobile" href="index.html#shop">Shop</a>
+        <a href="index.html#ask-else">Ask else</a>
+        <a class="hide-mobile" href="index.html#community">Community</a>
+        <a class="hide-mobile" href="index.html#style-dna" data-get-app="dna">Style DNA</a>
+        <button class="btn btn--small nav__cta" type="button" data-get-app>Get the app</button>
+      </div>
+    </nav>
+  </header>
+
+  <main class="product container" data-product>
+    <a class="product__back" href="index.html#shop">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      Back to shop
+    </a>
+
+    <!-- Filled by js/else.js from GET /public/items/{id} -->
+    <div class="product__main" data-product-main hidden>
+      <div class="product__gallery">
+        <div class="product__photo">
+          <img data-product-photo src="" alt="">
+          <div class="product__photo-actions">
+            <button type="button" data-get-app="love" aria-label="Add to What I love, in the app">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
+            </button>
+            <button type="button" data-share aria-label="Share this piece">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg>
+            </button>
+          </div>
+          <span class="item__badge product__sold" data-product-sold hidden>Sold</span>
+        </div>
+        <div class="product__thumbs" data-product-thumbs></div>
+      </div>
+
+      <div class="product__info">
+        <span class="product__brand" data-product-brand></span>
+        <h1 class="product__title" data-product-title></h1>
+        <span class="product__price" data-product-price></span>
+        <div class="product__retail" data-product-retail hidden>
+          <span class="product__retail-line">Retail approx. <s data-product-retail-price></s> <span class="product__discount" data-product-discount></span></span>
+          <span class="product__ai"><img src="img/mark.png" alt="" width="18" height="18">Retail price found by else AI</span>
+        </div>
+        <span class="product__meta" data-product-meta></span>
+
+        <div class="product__actions" data-product-actions>
+          <button class="btn btn--primary" type="button" data-get-app="cart">Add to cart</button>
+          <button class="btn btn--soft" type="button" data-get-app="offer">Make an offer</button>
+        </div>
+        <div class="product__sold-note" data-product-sold-note hidden>
+          <p>This one found a new home. else can find you something just like it.</p>
+          <button class="btn btn--primary" type="button" data-get-app="similar">Find something similar</button>
+        </div>
+
+        <div class="product__styling" data-product-styling hidden>
+          <span class="product__styling-label"><img src="img/mark.png" alt="" width="22" height="22">Styling from else</span>
+          <p data-product-styling-text></p>
+        </div>
+
+        <p class="product__description" data-product-description></p>
+
+        <div class="seller" data-product-seller>
+          <span class="avatar" data-seller-avatar aria-hidden="true"></span>
+          <div class="seller__info">
+            <span class="seller__name" data-seller-name></span>
+            <span class="seller__stats" data-seller-stats></span>
+          </div>
+          <button class="btn btn--small seller__follow" type="button" data-get-app="follow">Follow</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="product__missing" data-product-missing hidden>
+      <p class="product__missing-title">This piece isn’t <em>here</em> anymore.</p>
+      <p>It may have been sold or removed. There’s plenty more in the shop.</p>
+      <a class="btn btn--primary" href="index.html#shop">Back to shop</a>
+    </div>
+
+    <section class="product__more" data-product-more hidden>
+      <div class="shop__head">
+        <h2 class="shop__title" data-product-more-title>More from else</h2>
+        <button class="product__see-all" type="button" data-get-app="shop">See all ›</button>
+      </div>
+      <div class="items items--compact" data-product-more-items></div>
+    </section>
+
+    <section class="goes-with">
+      <div class="goes-with__text">
+        <img src="img/mark.png" alt="" width="52" height="52">
+        <div>
+          <p class="goes-with__title">Goes well <em>with…</em></p>
+          <p class="goes-with__desc">else styles this piece with what’s in the closet, in your size. Only in the app.</p>
+        </div>
+      </div>
+      <button class="btn btn--primary" type="button" data-get-app="look">See the look</button>
+    </section>
+  </main>
+
+  <footer class="footer container">
+    <img src="img/logo-dark.png" alt="else" width="1200" height="295">
+    <div class="footer__links">
+      <a href="https://elsecompany.com/privacy.html">Privacy</a>
+      <a href="https://elsecompany.com/legal.html">Terms</a>
+      <a href="mailto:else@elsecompany.com">Contact</a>
+    </div>
+  </footer>
+
+  <!-- Sticky bar on phones -->
+  <div class="app-bar" role="complementary" aria-label="Get the app">
+    <img src="img/logo-dark.png" alt="else" width="1200" height="295">
+    <span>Better in the app</span>
+    <button class="btn btn--primary btn--small" type="button" data-get-app>Get it</button>
+  </div>
+
+  <!-- "Get the app" popup (same as on the home page) -->
+  <div class="get-app" id="get-app" role="dialog" aria-modal="true" aria-labelledby="get-app-title" aria-hidden="true">
+    <div class="get-app__card">
+      <div class="get-app__top">
+        <span>CURATED AI FASHION</span>
+        <img src="img/logo-white.png" alt="else" width="1200" height="295">
+      </div>
+      <button class="get-app__close" type="button" aria-label="Close" data-close-app-popup>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <div class="get-app__body">
+        <h2 class="get-app__title" id="get-app-title" data-get-app-title>Psst… this one’s better <em>in the app.</em></h2>
+        <p class="get-app__text" data-get-app-text>Save what you love, make offers, ask your stylist and get your full style DNA.</p>
+        <div data-when-live hidden>
+          <div class="get-app__qr only-desktop">
+            <img data-qr-src="img/app-store-qr.svg" alt="QR code to download else on the App Store">
+            <div class="get-app__qr-label">
+              <span class="eyebrow">Scan to download</span>
+              <span>Point your iPhone<br>camera here</span>
+            </div>
+          </div>
+          <a class="btn btn--primary get-app__store only-mobile" href="#" data-app-store-link>Download on the App Store</a>
+        </div>
+        <div data-when-not-live>
+          <p class="get-app__text"><strong>Coming soon to the App Store.</strong></p>
+        </div>
+        <p class="get-app__footer">No invitation yet? <a href="https://elsecompany.com/" data-waitlist-link>Join the waitlist</a></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sample data until the backend is connected (see apiBaseUrl in js/else.js) -->
+  <script src="js/data.js"></script>
+  <script src="js/else.js"></script>
+</body>
+</html>
