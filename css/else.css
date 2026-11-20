@@ -319,8 +319,9 @@ section[id] {
 
 .hero {
   position: relative;
-  min-height: 100vh;
-  min-height: 100svh;
+  /* A little less than the screen, so the next section peeks out at the bottom */
+  min-height: 86vh;
+  min-height: 86svh;
   display: flex;
   flex-direction: column;
   background-color: #6d7a98;
@@ -365,6 +366,60 @@ section[id] {
   line-height: 1.35;
 }
 
+/* "Discover" cue at the bottom of the sky photo */
+.scroll-cue {
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 4px 12px;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  transition: opacity 0.4s ease;
+}
+
+.scroll-cue__line {
+  position: relative;
+  width: 1px;
+  height: 40px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.scroll-cue__line::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: -40%;
+  width: 1px;
+  height: 40%;
+  background: #ffffff;
+  animation: scroll-cue 1.8s ease-in-out infinite;
+}
+
+@keyframes scroll-cue {
+  0% {
+    top: -40%;
+  }
+  100% {
+    top: 100%;
+  }
+}
+
+.scroll-cue.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .hero__actions {
   display: flex;
   flex-direction: column;
@@ -387,7 +442,7 @@ section[id] {
   flex-wrap: wrap;
   align-items: center;
   gap: 72px;
-  padding-top: 112px;
+  padding-top: 56px;
   padding-bottom: 96px;
 }
 
@@ -1889,6 +1944,16 @@ section[id] {
   box-shadow: 0 16px 40px rgba(43, 47, 58, 0.18);
 }
 
+.app-bar {
+  transition: transform 0.35s ease, opacity 0.35s ease;
+}
+
+.app-bar.is-waiting {
+  transform: translateY(140%);
+  opacity: 0;
+  pointer-events: none;
+}
+
 .app-bar img {
   height: 16px;
   width: auto;
@@ -1937,7 +2002,7 @@ section[id] {
 
   .preview {
     gap: 48px;
-    padding-top: 72px;
+    padding-top: 40px;
     padding-bottom: 64px;
   }
 
@@ -2116,5 +2181,10 @@ section[id] {
 
   .notif {
     transition: none;
+  }
+
+  .scroll-cue__line::after {
+    animation: none;
+    top: 30%;
   }
 }

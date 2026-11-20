@@ -41,6 +41,9 @@
     // data in js/data.js. We add each one here as its endpoint is ready.
     liveData: ["brands", "items", "posts", "greetings", "askElseShowcase"],
 
+    // Anonymous statistics (admin > Web stats). false turns them off.
+    statistics: true,
+
     // How often the greeting changes, in milliseconds
     greetingInterval: 8000,
 
@@ -179,6 +182,162 @@
   var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   // ------------------------------------------------------------------------
+  // Anonymous statistics (admin > Web stats)
+  // No cookies, nothing stored in the browser, no names: a visit is this page load,
+  // with a random id that disappears when the page closes. Browsers that ask not to
+  // be tracked (Global Privacy Control or Do Not Track) send nothing.
+  // ------------------------------------------------------------------------
+
+  var Track = (function () {
+    var optedOut = navigator.globalPrivacyControl === true || navigator.doNotTrack === "1" || window.doNotTrack === "1";
+    var enabled = CONFIG.statistics && CONFIG.apiBaseUrl && !optedOut;
+    var visit = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+      : String(Date.now()) + "-" + Math.random().toString(36).slice(2);
+    var page = document.querySelector("[data-product]") ? "item" : "home";
+    var queue = [];
+    var context = (function () {
+      var params = new URLSearchParams(window.location.search);
+      var width = window.innerWidth || 0;
+      var referrer = "";
+      try {
+        var host = document.referrer ? new URL(document.referrer).hostname : "";
+        referrer = host && host !== window.location.hostname ? host.replace(/^www\./, "") : "";
+      } catch (e) {
+        referrer = "";
+      }
+      return {
+        r: referrer,
+        us: params.get("utm_source") || "",
+        um: params.get("utm_medium") || "",
+        uc: params.get("utm_campaign") || "",
+        dv: width < 720 ? "mobile" : (width < 1100 ? "tablet" : "desktop"),
+        w: String(Math.round(width / 100) * 100),
+        l: (navigator.language || "").slice(0, 12),
+        tz: (Intl.DateTimeFormat().resolvedOptions().timeZone || "").slice(0, 40)
+      };
+    })();
+
+    function send(useBeacon) {
+      if (!enabled || !queue.length) {
+        return;
+      }
+      var body = JSON.stringify(queue.splice(0, 30));
+      var url = CONFIG.apiBaseUrl + "/public/events";
+      // Plain text: the browser sends it without asking the server first, even when the page closes
+      if (useBeacon && navigator.sendBeacon) {
+        navigator.sendBeacon(url, new Blob([body], { type: "text/plain" }));
+      } else {
+        fetch(url, { method: "POST", body: body, headers: { "Content-Type": "text/plain" }, keepalive: true })
+          .catch(function () {});
+      }
+    }
+
+    function event(name, detail) {
+      if (!enabled) {
+        return;
+      }
+      var e = { v: visit, n: name, p: page, d: detail == null ? "" : String(detail) };
+      // The context only travels with the page view, to keep the other events small
+      if (name === "page_view") {
+        Object.keys(context).forEach(function (k) { e[k] = context[k]; });
+      }
+      queue.push(e);
+      if (queue.length >= 10) {
+        send(false);
+      }
+    }
+
+    if (enabled) {
+      setInterval(function () { send(false); }, 5000);
+      // When the page is hidden or closed: send what is left, and how long it was open
+      var start = Date.now();
+      var timeSent = false;
+      function leaving() {
+        if (!timeSent) {
+          timeSent = true;
+          event("time_on_page", Math.round((Date.now() - start) / 1000));
+        }
+        send(true);
+      }
+      document.addEventListener("visibilitychange", function () {
+        if (document.visibilityState === "hidden") {
+          leaving();
+        }
+      });
+      window.addEventListener("pagehide", leaving);
+    }
+
+    return { event: event, page: page };
+  })();
+
+  function initStatistics() {
+    var itemId = new URLSearchParams(window.location.search).get("id");
+    Track.event("page_view", Track.page === "item" ? itemId : "");
+    if (Track.page === "item" && itemId) {
+      Track.event("item_view", itemId);
+    }
+
+    // Sections that came into view (once each)
+    if ("IntersectionObserver" in window) {
+      var seen = {};
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          var name = entry.target.getAttribute("data-track-section");
+          if (entry.isIntersecting && !seen[name]) {
+            seen[name] = true;
+            Track.event("section_view", name);
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.25 });
+      document.querySelectorAll("[data-track-section]").forEach(function (section) {
+        observer.observe(section);
+      });
+    }
+
+    // How far down the page: 25, 50, 75 and 100 %
+    var marks = [25, 50, 75, 100];
+    var reached = {};
+    function onScroll() {
+      var height = document.documentElement.scrollHeight - window.innerHeight;
+      var percent = height > 0 ? (window.scrollY / height) * 100 : 100;
+      marks.forEach(function (mark) {
+        if (percent >= mark - 2 && !reached[mark]) {
+          reached[mark] = true;
+          Track.event("scroll_depth", mark);
+        }
+      });
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    // Clicks worth knowing about
+    document.addEventListener("click", function (event) {
+      var target = event.target.closest("a, button");
+      if (!target) {
+        return;
+      }
+      if (target.hasAttribute("data-get-app")) {
+        Track.event("get_app", target.getAttribute("data-get-app") || "general");
+      } else if (target.hasAttribute("data-waitlist-link")) {
+        Track.event("waitlist_click");
+      } else if (target.hasAttribute("data-app-store-link")) {
+        Track.event("app_store_click");
+      } else if (target.hasAttribute("data-scroll-cue")) {
+        Track.event("scroll_cue");
+      } else if (target.closest(".nav__links") || target.classList.contains("nav__logo")) {
+        Track.event("nav_click", (target.textContent || "logo").trim().slice(0, 40) || "logo");
+      } else if (target.classList.contains("item__link") || target.classList.contains("post__item")) {
+        var href = target.getAttribute("href") || "";
+        var id = href.split("id=")[1] || "";
+        var where = target.closest(".community") ? "community" : (target.closest(".product__more") ? "more" : "just in");
+        Track.event("item_click", decodeURIComponent(id) + " · " + where);
+      } else if (target.hasAttribute("data-share")) {
+        Track.event("share", navigator.share ? "share sheet" : "copy link");
+      }
+    }, true);
+  }
+
+  // ------------------------------------------------------------------------
   // Fixed header: light over the sky photo, frosted once past it
   // ------------------------------------------------------------------------
 
@@ -203,6 +362,29 @@
     update();
     window.addEventListener("scroll", update, { passive: true });
     window.addEventListener("resize", update);
+  }
+
+  // ------------------------------------------------------------------------
+  // "Discover" cue: hidden as soon as the visitor scrolls
+  // ------------------------------------------------------------------------
+
+  function initScrollCue() {
+    var cue = document.querySelector("[data-scroll-cue]");
+    if (!cue) {
+      return;
+    }
+    // On phones, the "Get it" bar waits until the sky photo (with its own buttons) is gone,
+    // so it does not cover what peeks out below it
+    var bar = document.querySelector(".app-bar");
+    var hero = document.querySelector("[data-hero]");
+    function update() {
+      cue.classList.toggle("is-hidden", window.scrollY > 40);
+      if (bar && hero) {
+        bar.classList.toggle("is-waiting", window.scrollY < hero.offsetHeight * 0.6);
+      }
+    }
+    update();
+    window.addEventListener("scroll", update, { passive: true });
   }
 
   // ------------------------------------------------------------------------
@@ -1187,7 +1369,9 @@
   // ------------------------------------------------------------------------
 
   initPopup();
+  initStatistics();
   initHeader();
+  initScrollCue();
   initGreeting();
   initAskHint();
   initNotifications();

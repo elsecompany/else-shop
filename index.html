@@ -53,6 +53,11 @@
         <span class="hero__note">By invitation · Free on iPhone</span>
       </div>
     </div>
+    <!-- Tells people there is more below; fades away once they scroll -->
+    <a class="scroll-cue" href="#discover" data-scroll-cue>
+      <span>Discover</span>
+      <span class="scroll-cue__line" aria-hidden="true"></span>
+    </a>
   </section>
 
   <main>
@@ -60,7 +65,7 @@
     <!-- =================================================================
          App preview: greeting + iPhone showing the app's Home
          ================================================================= -->
-    <section class="preview container" aria-labelledby="preview-title">
+    <section class="preview container" id="discover" aria-labelledby="preview-title" data-track-section="preview">
       <div class="preview__text" data-greeting>
         <span class="eyebrow" data-greeting-label>San Francisco</span>
         <h2 class="display preview__title" id="preview-title" data-greeting-title>Hello, <em>gorgeous.</em> Your closet missed you.</h2>
@@ -85,14 +90,14 @@
     <!-- =================================================================
          Brands (from the admin's brand list)
          ================================================================= -->
-    <section class="brands" aria-label="Brands on else">
+    <section class="brands" aria-label="Brands on else" data-track-section="brands">
       <ul class="brands__list container" data-brands></ul>
     </section>
 
     <!-- =================================================================
          Shop: "Picked for you" (locked, it lives in the app) + "Just in"
          ================================================================= -->
-    <section class="shop container" id="shop" aria-labelledby="picked-title">
+    <section class="shop container" id="shop" aria-labelledby="picked-title" data-track-section="shop">
       <div class="shop__head">
         <h2 class="shop__title" id="picked-title">Picked for you</h2>
         <span class="eyebrow">In the app</span>
@@ -120,7 +125,7 @@
     <!-- =================================================================
          Ask else: showcase conversation, played like a real chat
          ================================================================= -->
-    <section class="ask" id="ask-else" aria-labelledby="ask-title">
+    <section class="ask" id="ask-else" aria-labelledby="ask-title" data-track-section="ask-else">
       <div class="ask__inner container">
         <div class="ask__text">
           <span class="eyebrow ask__eyebrow"><img src="img/mark.png" alt="" width="28" height="28">Ask else</span>
@@ -154,7 +159,7 @@
     <!-- =================================================================
          Community: real posts the team marks "Show on web" in the admin
          ================================================================= -->
-    <section class="community container" id="community" aria-labelledby="community-title">
+    <section class="community container" id="community" aria-labelledby="community-title" data-track-section="community">
       <div class="community__intro">
         <span class="eyebrow">Community</span>
         <h2 class="display" id="community-title">All things <em>style.</em></h2>
