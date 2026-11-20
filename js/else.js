@@ -30,10 +30,16 @@
     // Where people without an invitation go (the waitlist form lives on elsecompany.com).
     waitlistUrl: "https://elsecompany.com/",
 
-    // Base URL of the public backend API. While it is null the site uses
-    // the sample data in js/data.js.
-    // Later, e.g. "https://api.elsecompany.com"
-    apiBaseUrl: null,
+    // Base URL of the public backend API, chosen by where the site is open:
+    // - on this Mac (http://localhost:8000): the backend running on the Mac
+    // - anywhere else: the backend on AWS (api.elsecompany.com once the DNS is ready)
+    apiBaseUrl: (location.hostname === "localhost" || location.hostname === "127.0.0.1")
+      ? "http://localhost:8080"
+      : "https://18-224-131-44.sslip.io",
+
+    // Which data already comes from the backend. The rest still uses the sample
+    // data in js/data.js. We add each one here as its endpoint is ready.
+    liveData: ["brands", "items", "posts", "greetings", "askElseShowcase"],
 
     // How often the greeting changes, in milliseconds
     greetingInterval: 8000,
@@ -50,17 +56,23 @@
 
   var Data = {
     get: function (path, sampleKey) {
-      if (CONFIG.apiBaseUrl) {
-        return fetch(CONFIG.apiBaseUrl + path, { headers: { Accept: "application/json" } })
-          .then(function (response) {
-            if (!response.ok) {
-              throw new Error("Request failed: " + path + " (" + response.status + ")");
-            }
-            return response.json();
-          });
+      var sample = (window.ELSE_SAMPLE_DATA || {})[sampleKey];
+      var isLive = CONFIG.apiBaseUrl && CONFIG.liveData.indexOf(sampleKey) !== -1;
+      if (!isLive) {
+        return Promise.resolve(sample || []);
       }
-      var sample = window.ELSE_SAMPLE_DATA || {};
-      return Promise.resolve(sample[sampleKey] || []);
+      return fetch(CONFIG.apiBaseUrl + path, { headers: { Accept: "application/json" } })
+        .then(function (response) {
+          if (!response.ok) {
+            throw new Error("Request failed: " + path + " (" + response.status + ")");
+          }
+          return response.json();
+        })
+        .catch(function (error) {
+          // The page never looks empty: if the backend does not answer, show the sample data
+          console.warn("else: using sample data for " + sampleKey + ".", error);
+          return sample || [];
+        });
     },
 
     getBrands: function () {
@@ -72,8 +84,19 @@
     },
 
     getItem: function (id) {
-      if (CONFIG.apiBaseUrl) {
-        return Data.get("/public/items/" + encodeURIComponent(id));
+      // Pieces from the sample data (e.g. in sample Community posts) keep using it
+      var isSample = id.indexOf("sample-") === 0;
+      if (!isSample && CONFIG.liveData.indexOf("items") !== -1) {
+        return fetch(CONFIG.apiBaseUrl + "/public/items/" + encodeURIComponent(id), { headers: { Accept: "application/json" } })
+          .then(function (response) {
+            if (response.status === 404) {
+              return null;
+            }
+            if (!response.ok) {
+              throw new Error("Request failed: item " + id + " (" + response.status + ")");
+            }
+            return response.json();
+          });
       }
       var items = (window.ELSE_SAMPLE_DATA && window.ELSE_SAMPLE_DATA.items) || [];
       var found = items.filter(function (item) { return item.id === id; })[0];
@@ -84,8 +107,16 @@
       return Data.get("/public/posts", "posts");
     },
 
+    getGreetings: function () {
+      return Data.get("/public/greetings", "greetings");
+    },
+
     getAskElseShowcase: function () {
-      return Data.get("/public/ask-else-showcase", "askElseShowcase");
+      // Until the team writes one in admin > Website, keep the example in js/data.js
+      return Data.get("/public/ask-else-showcase", "askElseShowcase").then(function (showcase) {
+        var hasMessages = showcase && showcase.messages && showcase.messages.length;
+        return hasMessages ? showcase : (window.ELSE_SAMPLE_DATA || {}).askElseShowcase;
+      });
     }
   };
 
@@ -133,6 +164,12 @@
     return wrapper.firstChild;
   }
 
+  // Photos from the backend come as "/public/photos/..." (stable addresses of light copies):
+  // they live on the backend's server. Sample photos ("img/...") stay as they are.
+  function photoSrc(url) {
+    return url && url.charAt(0) === "/" ? CONFIG.apiBaseUrl + url : url;
+  }
+
   function wait(ms) {
     return new Promise(function (resolve) {
       setTimeout(resolve, ms);
@@ -172,12 +209,47 @@
   // Rotating greeting (same spirit as the app's Home greeting)
   // ------------------------------------------------------------------------
 
-  var GREETINGS = [
-    { label: "Good morning", lead: "Hello,", name: "gorgeous.", tail: "Your closet missed you." },
-    { label: "Friday", lead: "Friday feeling,", name: "darling.", tail: "Something new for tonight?" },
-    { label: "Bonjour", lead: "Bonjour,", name: "chic one.", tail: "Shall we find something?" },
-    { label: "Just in", lead: "Well,", name: "look at you.", tail: "Ready for something new?" }
-  ];
+  // The greetings come from the app's own lines (admin > Weather), chosen for the weather
+  // in San Francisco right now, like the app's Home. {name} is filled with a sweet word.
+  var GREETING_CITY = { name: "San Francisco", latitude: 37.7749, longitude: -122.4194, timeZone: "America/Los_Angeles" };
+  var GREETING_NAMES = ["gorgeous", "darling", "chic one", "you"];
+  var WEATHER_WORDS = { SUN: "Sunny", CLOUDS: "Cloudy", FOG: "Foggy", RAIN: "Rainy", WIND: "Windy", COLD: "Cold", HEAT: "Hot", SNOW: "Snowy" };
+
+  // Open-Meteo weather code + temperature + wind -> the app's weather kinds
+  function weatherKind(code, temperature, wind) {
+    if ([71, 73, 75, 77, 85, 86].indexOf(code) !== -1) return "SNOW";
+    if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82) || code >= 95) return "RAIN";
+    if (code === 45 || code === 48) return "FOG";
+    if (wind >= 40) return "WIND";
+    if (temperature >= 30) return "HEAT";
+    if (temperature <= 7) return "COLD";
+    if (code <= 1) return "SUN";
+    return "CLOUDS";
+  }
+
+  function currentWeather() {
+    var url = "https://api.open-meteo.com/v1/forecast?latitude=" + GREETING_CITY.latitude +
+      "&longitude=" + GREETING_CITY.longitude +
+      "&current=temperature_2m,weather_code,wind_speed_10m&timezone=" + encodeURIComponent(GREETING_CITY.timeZone);
+    return fetch(url)
+      .then(function (response) { return response.ok ? response.json() : null; })
+      .then(function (data) {
+        if (!data || !data.current) {
+          return null;
+        }
+        var c = data.current;
+        return {
+          kind: weatherKind(c.weather_code, c.temperature_2m, c.wind_speed_10m),
+          temperature: Math.round(c.temperature_2m)
+        };
+      })
+      .catch(function () { return null; });
+  }
+
+  function timeOfDay() {
+    var hour = Number(new Intl.DateTimeFormat("en-US", { hour: "numeric", hour12: false, timeZone: GREETING_CITY.timeZone }).format(new Date()));
+    return hour < 12 ? "morning" : (hour < 18 ? "afternoon" : "evening");
+  }
 
   function initGreeting() {
     var root = document.querySelector("[data-greeting]");
@@ -185,31 +257,63 @@
       return;
     }
     var label = root.querySelector("[data-greeting-label]");
-    var lead = root.querySelector("[data-greeting-lead]");
-    var name = root.querySelector("[data-greeting-name]");
-    var tail = root.querySelector("[data-greeting-tail]");
-    var index = 0;
+    var title = root.querySelector("[data-greeting-title]");
 
-    function show(i) {
-      var g = GREETINGS[i];
-      label.textContent = g.label;
-      lead.textContent = g.lead;
-      name.textContent = g.name;
-      tail.textContent = g.tail;
-    }
+    Promise.all([Data.getGreetings(), currentWeather()]).then(function (results) {
+      var all = results[0] || [];
+      var weather = results[1];
+      var city = GREETING_CITY.name.toLowerCase();
 
-    show(index);
-    if (reduceMotion) {
-      return;
-    }
-    setInterval(function () {
-      index = (index + 1) % GREETINGS.length;
-      root.classList.add("is-changing");
-      setTimeout(function () {
-        show(index);
-        root.classList.remove("is-changing");
-      }, 300);
-    }, CONFIG.greetingInterval);
+      // Lines for today's weather (everywhere or in this city, never "first of the season" ones)
+      var lines = all.filter(function (g) {
+        return weather && g.weather === weather.kind && !g.firstOnly && (!g.city || g.city.toLowerCase() === city);
+      });
+      if (!lines.length) {
+        lines = all.filter(function (g) { return !g.firstOnly && !g.city; });
+      }
+      if (!lines.length) {
+        return;
+      }
+
+      if (weather) {
+        label.textContent = GREETING_CITY.name + " · " + weather.temperature + "°C " + WEATHER_WORDS[weather.kind];
+      }
+
+      var index = Math.floor(Math.random() * lines.length);
+      var nameIndex = 0;
+
+      function show() {
+        var name = GREETING_NAMES[nameIndex % GREETING_NAMES.length];
+        var text = lines[index].text
+          .replace(/\{city\}/g, GREETING_CITY.name)
+          .replace(/\{temp\}/g, weather ? weather.temperature + "°" : "")
+          .replace(/\{timeOfDay\}/g, timeOfDay());
+        // {name} goes in italics, like in the app
+        var parts = text.split("{name}");
+        title.textContent = "";
+        parts.forEach(function (part, i) {
+          title.appendChild(document.createTextNode(part));
+          if (i < parts.length - 1) {
+            title.appendChild(el("em", null, name));
+          }
+        });
+      }
+
+      show();
+      if (reduceMotion || lines.length < 2) {
+        return;
+      }
+      setInterval(function () {
+        var next = Math.floor(Math.random() * lines.length);
+        index = next === index ? (next + 1) % lines.length : next;
+        nameIndex += 1;
+        root.classList.add("is-changing");
+        setTimeout(function () {
+          show();
+          root.classList.remove("is-changing");
+        }, 300);
+      }, CONFIG.greetingInterval);
+    });
   }
 
   // ------------------------------------------------------------------------
@@ -385,7 +489,7 @@
       var card = el("div", "chat__item" + (item.sold ? " chat__item--sold" : ""));
       var photo = el("div", "chat__item-photo");
       var img = el("img");
-      img.src = item.photoUrl;
+      img.src = photoSrc(item.photoUrl);
       img.alt = item.brand + " " + item.title + (item.sold ? ", sold" : "");
       img.loading = "lazy";
       photo.appendChild(img);
@@ -510,7 +614,7 @@
 
     var photo = el("div", "item__photo");
     var img = el("img");
-    img.src = item.photoUrl;
+    img.src = photoSrc(item.photoUrl);
     img.alt = "";
     img.loading = "lazy";
     photo.appendChild(img);
@@ -555,10 +659,14 @@
     Data.getItems()
       .then(function (items) {
         if (locked) {
+          // The locked "Picked for you" always uses the sample photos from js/data.js,
+          // so it never repeats the real pieces shown in "Just in" right below
+          var samplePicks = ((window.ELSE_SAMPLE_DATA && window.ELSE_SAMPLE_DATA.items) || [])
+            .filter(function (item) { return !item.sold; });
           locked.textContent = "";
-          items.filter(function (item) { return !item.sold; }).slice(0, 4).forEach(function (item) {
+          samplePicks.slice(0, 4).forEach(function (item) {
             var img = el("img");
-            img.src = item.photoUrl;
+            img.src = photoSrc(item.photoUrl);
             img.alt = "";
             img.loading = "lazy";
             locked.appendChild(img);
@@ -612,7 +720,7 @@
     var mainPhoto = root.querySelector("[data-product-photo]");
     var thumbs = root.querySelector("[data-product-thumbs]");
     function showPhoto(index) {
-      mainPhoto.src = photos[index];
+      mainPhoto.src = photoSrc(photos[index]);
       mainPhoto.alt = item.brand + " " + item.title + (photos.length > 1 ? ", photo " + (index + 1) + " of " + photos.length : "");
       thumbs.querySelectorAll("button").forEach(function (b, i) {
         b.setAttribute("aria-current", i === index ? "true" : "false");
@@ -625,7 +733,7 @@
         b.type = "button";
         b.setAttribute("aria-label", "Photo " + (i + 1));
         var img = el("img");
-        img.src = url;
+        img.src = photoSrc(url);
         img.alt = "";
         b.appendChild(img);
         b.addEventListener("click", function () { showPhoto(i); });
@@ -708,7 +816,11 @@
       if (!share) {
         return;
       }
-      var url = window.location.href;
+      // Real pieces share the backend's preview page, so WhatsApp, iMessage... show the photo,
+      // the name and the price. It sends people straight to this page.
+      var id = new URLSearchParams(window.location.search).get("id") || "";
+      var isLive = id && id.indexOf("sample-") !== 0 && CONFIG.liveData.indexOf("items") !== -1;
+      var url = isLive ? CONFIG.apiBaseUrl + "/share/items/" + encodeURIComponent(id) : window.location.href;
       if (navigator.share) {
         navigator.share({ title: document.title, url: url }).catch(function () {});
       } else if (navigator.clipboard) {
@@ -804,13 +916,28 @@
     head.appendChild(meta);
     article.appendChild(head);
 
-    article.appendChild(el("p", "post__text", post.text));
+    if (post.text) {
+      article.appendChild(el("p", "post__text", post.text));
+    }
+
+    // Photos of the post (the team can add up to 4 in the app)
+    if (post.photos && post.photos.length) {
+      var gallery = el("div", "post__photos");
+      post.photos.slice(0, 4).forEach(function (url) {
+        var photo = el("img");
+        photo.src = photoSrc(url);
+        photo.alt = "";
+        photo.loading = "lazy";
+        gallery.appendChild(photo);
+      });
+      article.appendChild(gallery);
+    }
 
     if (post.item) {
       var item = el("a", "post__item");
       item.href = itemUrl(post.item.id);
       var photo = el("img");
-      photo.src = post.item.photoUrl;
+      photo.src = photoSrc(post.item.photoUrl);
       photo.alt = post.item.brand + " " + post.item.title;
       photo.loading = "lazy";
       item.appendChild(photo);

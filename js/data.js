@@ -152,6 +152,18 @@ window.ELSE_SAMPLE_DATA = {
     { id: "realisation-par", name: "Réalisation Par" }
   ],
 
+  // GET /public/greetings — the app's Home greetings (admin > Weather)
+  greetings: [
+    { weather: "SUN", text: "Hello, {name}. Your closet missed you.", city: null, firstOnly: false },
+    { weather: "SUN", text: "Sunny {timeOfDay}, {name}. Something new for today?", city: null, firstOnly: false },
+    { weather: "CLOUDS", text: "Bonjour, {name}. Shall we find something?", city: null, firstOnly: false },
+    { weather: "FOG", text: "Foggy {timeOfDay}, {name}. Time for layers.", city: null, firstOnly: false },
+    { weather: "RAIN", text: "Rainy day, {name}. Cozy knits are calling.", city: null, firstOnly: false },
+    { weather: "COLD", text: "{temp} out there, {name}. Coat season is here.", city: null, firstOnly: false },
+    { weather: "WIND", text: "Windy in {city}, {name}. Hold on to your hat.", city: null, firstOnly: false },
+    { weather: "HEAT", text: "Hot one, {name}. Linen, please.", city: null, firstOnly: false }
+  ],
+
   // Showcase conversation for the "Ask else" section.
   // Written by the else team (never a real member's chat).
   // Later it can come from the admin: GET /public/ask-else-showcase,
