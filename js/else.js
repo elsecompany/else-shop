@@ -32,17 +32,21 @@
 
     // Base URL of the public backend API, chosen by where the site is open:
     // - on this Mac (http://localhost:8000): the backend running on the Mac
-    // - anywhere else: the backend on AWS (api.elsecompany.com once the DNS is ready)
+    // - on the private preview (preview.elsecompany.com): the same address, which passes /public/** to the backend
+    // - anywhere else: the backend on AWS
     apiBaseUrl: (location.hostname === "localhost" || location.hostname === "127.0.0.1")
       ? "http://localhost:8080"
-      : "https://18-224-131-44.sslip.io",
+      : location.hostname === "preview.elsecompany.com"
+        ? location.origin
+        : "https://api-test.elsecompany.com",
 
     // Which data already comes from the backend. The rest still uses the sample
     // data in js/data.js. We add each one here as its endpoint is ready.
     liveData: ["brands", "items", "posts", "greetings", "askElseShowcase"],
 
     // Anonymous statistics (admin > Web stats). false turns them off.
-    statistics: true,
+    // Off on the private preview, so the team's own visits do not count.
+    statistics: location.hostname !== "preview.elsecompany.com",
 
     // How often the greeting changes, in milliseconds
     greetingInterval: 8000,
