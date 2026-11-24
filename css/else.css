@@ -1,7 +1,7 @@
 /* ==========================================================================
    else — website styles
    Design tokens mirror the iOS app: lavender background, slate buttons,
-   glass pills, Newsreader serif headlines and Inter for everything else.
+   glass pills, Inter everywhere (Newsreader italic only for the greeting name).
    ========================================================================== */
 
 :root {
@@ -88,7 +88,7 @@ button {
 }
 
 .serif {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-weight: 400;
 }
 
@@ -99,7 +99,7 @@ button {
 
 .display {
   margin: 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-weight: 400;
   font-size: clamp(44px, 5.4vw, 72px);
   line-height: 1.03;
@@ -361,7 +361,7 @@ section[id] {
 .hero__lead {
   margin: 0;
   max-width: 520px;
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 26px;
   line-height: 1.35;
 }
@@ -652,7 +652,7 @@ section[id] {
 
 .shop__title {
   margin: 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-weight: 400;
   font-size: 46px;
   letter-spacing: -0.5px;
@@ -708,7 +708,7 @@ section[id] {
 
 .locked__title {
   margin: 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 36px;
   line-height: 1.15;
 }
@@ -970,7 +970,7 @@ section[id] {
 
 .product__title {
   margin: -6px 0 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-weight: 400;
   font-size: clamp(36px, 4vw, 50px);
   line-height: 1.05;
@@ -1132,7 +1132,7 @@ section[id] {
 
 .product__missing-title {
   margin: 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 40px;
   color: var(--ink);
 }
@@ -1184,7 +1184,7 @@ section[id] {
 
 .goes-with__title {
   margin: 0 0 4px;
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 28px;
 }
 
@@ -1590,7 +1590,7 @@ section[id] {
   width: 48px;
   height: 48px;
   border-radius: 999px;
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-style: italic;
   font-size: 22px;
   color: var(--ink);
@@ -1859,7 +1859,7 @@ section[id] {
 
 .get-app__title {
   margin: 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-weight: 400;
   font-size: 34px;
   line-height: 1.1;
@@ -2187,4 +2187,10 @@ section[id] {
     animation: none;
     top: 30%;
   }
+}
+
+/* The greeting name ("Hello, gorgeous.") keeps the serif italic, like in the app */
+.preview__title em {
+  font-family: var(--font-serif);
+  font-style: italic;
 }
